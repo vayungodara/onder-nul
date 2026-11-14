@@ -5,7 +5,7 @@
 
 A two-day warning for the hours when Dutch electricity prices go below zero ("onder nul").
 
-**Demo:** https://vayungodara.github.io/onder-nul/demo/
+**Demo:** https://raw.githack.com/vayungodara/onder-nul/main/demo/index.html
 **Code:** [onder_nul.ipynb](onder_nul.ipynb), with outputs and a note on every step
 
 ## The problem
@@ -16,7 +16,7 @@ In the Netherlands the hourly electricity price was negative for 584 hours in 20
 
 A model that gives every hour of a day a chance of the price going below zero, two days before that day. In go the calendar, the prices up to two days before, and the weather forecast as it looked two days before. Out comes a probability per hour, and a warning when it is 0.4 or higher.
 
-The [demo page](https://vayungodara.github.io/onder-nul/demo/) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. It also has a "pretend today is" view: pick a date, read the advice for the days after it, then reveal what happened. A household would open it on Thursday to plan Saturday.
+The [demo page](https://raw.githack.com/vayungodara/onder-nul/main/demo/index.html) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. It also has a "pretend today is" view: pick a date, read the advice for the days after it, then reveal what happened. A household would open it on Thursday to plan Saturday.
 
 ## What I added
 
@@ -80,7 +80,7 @@ pip install -r requirements.txt jupyter
 jupyter notebook onder_nul.ipynb
 ```
 
-The notebook reads the saved files in `data/`. If they are missing, it downloads them again. Running it rewrites `demo/data.js`, which is the only thing the demo page reads. Open `demo/index.html` in a browser to see the demo.
+The notebook reads the saved files in `data/`. If they are missing, it downloads them again. Running it rewrites `demo/data.js`, which is the only thing the demo page reads. Open `demo/index.html` in a browser to see the demo; it needs no server.
 
 | File | What it is |
 |---|---|
