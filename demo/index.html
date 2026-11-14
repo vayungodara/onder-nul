@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onder Nul: a two-day warning for negative electricity prices</title>
+<style>
+/* The look borrows from the yellow departure sheets in Dutch railway stations:
+   yellow = what was planned ahead, white = what actually arrived. */
+@font-face { font-family: Barlow; font-weight: 400; src: url(fonts/barlow-400.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: Barlow; font-weight: 600; src: url(fonts/barlow-600.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 600; src: url(fonts/barlow-semi-condensed-600.woff2) format("woff2"); font-display: swap; }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; src: url(fonts/barlow-semi-condensed-700.woff2) format("woff2"); font-display: swap; }
+:root {
+  --yellow: #FFC917; --blue: #003082; --blue-soft: #2A4A8F; --white: #fff; --red: #C8102E;
+  --rule: rgba(0, 48, 130, .28); --bar: #7F95C4; --blue-mid: #4F6BAD;
+  --display: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+* { box-sizing: border-box; }
+html { background: var(--yellow); color: var(--blue); scrollbar-color: var(--blue) var(--yellow); }
+body { margin: 0; font: 400 1.125rem/1.5 Barlow, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+::selection { background: var(--blue); color: var(--yellow); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+a { color: inherit; text-underline-offset: .18em; text-decoration-thickness: .08em; }
+h1, h2, th, .hours, .cell { font-family: var(--display); }
+.wrap { max-width: 72rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2.5rem); }
+.prose { max-width: 68ch; }
+
+header { background: var(--blue); color: var(--yellow); padding: 2.25rem 0 2rem; }
+header :focus-visible { outline-color: var(--yellow); }
+h1 { margin: 0; font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 700; line-height: .95; letter-spacing: -.02em; }
+header p { margin: 1rem 0 0; max-width: 46ch; font-size: clamp(1.15rem, 2.2vw, 1.4rem); color: var(--white); }
+h2 { margin: 4.5rem 0 .6rem; font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 700; line-height: 1.1; text-wrap: balance; }
+h2 + p { margin-top: 0; }
+p { margin: 0 0 1rem; }
+.note { color: var(--blue-soft); font-size: 1rem; }
+
+/* year strip */
+#year { display: block; width: 100%; height: 5.5rem; cursor: pointer; margin-top: 1.25rem; }
+.months { position: relative; height: 1.4rem; font: 600 .85rem var(--display); color: var(--blue-soft); border-top: 2px solid var(--blue); }
+.months span { position: absolute; top: .15rem; }
+.key { display: flex; flex-wrap: wrap; gap: .35rem 1.4rem; margin: .5rem 0 0; padding: 0; list-style: none; font-size: .95rem; }
+.key li { display: flex; align-items: center; gap: .45rem; }
+.key i { width: .85rem; height: .85rem; display: inline-block; }
+.key svg, .verdict svg { width: 1.1rem; height: 1.1rem; display: block; }
+
+/* day controls */
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 2rem 0 1.25rem; }
+button, input[type=date] {
+  font: 600 1rem/1 var(--display); color: var(--blue); background: transparent; border: 2px solid var(--blue);
+  border-radius: 4px; padding: .7rem .95rem; min-height: 2.75rem; cursor: pointer; accent-color: var(--blue);
+  transition: background .18s var(--ease), color .18s var(--ease);
+}
+button:hover, button[aria-pressed=true] { background: var(--blue); color: var(--yellow); }
+button:disabled { opacity: .35; cursor: default; background: transparent; color: var(--blue); }
+button.step { padding: .55rem; width: 2.75rem; }
+button.step svg { width: 1.1rem; height: 1.1rem; display: block; margin: auto; }
+.jump { margin-left: auto; display: flex; flex-wrap: wrap; gap: .6rem; }
+#story { font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.35; max-width: 60ch; margin: 0 0 1.5rem; min-height: 6.5em; }
+#story strong { font-weight: 600; }
+
+/* the hour sheet */
+.scroll { overflow-x: auto; padding-inline: .75rem; margin-inline: -.75rem; }
+.sheet { min-width: 46rem; }
+.row { display: grid; grid-template-columns: repeat(var(--n, 24), 1fr); gap: 3px; }
+.label { margin: 1rem 0 .3rem; font: 600 .95rem var(--display); position: sticky; left: 0; width: max-content; max-width: min(100%, calc(100vw - 2rem)); }
+.label small { font: 400 .9rem Barlow, sans-serif; color: var(--blue-soft); }
+.hours { font-weight: 700; font-size: 1.15rem; border-bottom: 2px solid var(--blue); padding-bottom: .15rem; }
+.hours span { text-align: center; }
+.sun { height: 2.5rem; align-items: end; border-bottom: 1px solid var(--rule); }
+.sun i { background: rgba(255, 255, 255, .6); border: 2px solid var(--blue); border-bottom: 0; height: calc(var(--v) * 100%); }
+.sun i[hidden] { display: block; visibility: hidden; }
+.cell { height: 2.1rem; display: grid; place-items: center; font-weight: 600; font-size: .95rem; border: 1px solid var(--rule); border-radius: 2px; color: var(--blue-soft); }
+.cell.on { background: var(--blue); border-color: var(--blue); color: var(--yellow); font-weight: 700; }
+.flip .cell { animation: flip .42s var(--ease) backwards; animation-delay: calc(var(--i) * 14ms); transform-origin: 50% 0; }
+@keyframes flip { from { transform: perspective(12rem) rotateX(-88deg); opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .flip .cell { animation: none; } }
+
+.arrived { background: var(--white); margin-top: 1.25rem; padding: .25rem .75rem .9rem; margin-inline: -.75rem; border-radius: 4px; }
+.chart { height: 13rem; position: relative; }
+.chart .col { position: relative; }
+.chart .col i { position: absolute; left: 0; right: 0; background: var(--bar); }
+.chart .col i.neg { background: var(--red); }
+.chart .zero { position: absolute; left: 0; right: 0; border-top: 2px solid var(--blue); }
+.chart .tick { position: absolute; left: .2rem; font: 600 .8rem var(--display); background: rgba(255,255,255,.85); padding: 0 .25rem; }
+.verdict { margin-top: .5rem; min-height: 1.4rem; }
+.verdict span { display: grid; place-items: center; }
+
+/* tables */
+.table-scroll { overflow-x: auto; background: var(--white); border-radius: 4px; padding: .5rem 1rem 1rem; margin-top: 1.25rem; }
+table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 1rem; }
+th { text-align: left; font-weight: 600; font-size: .95rem; padding: .7rem .75rem .5rem 0; border-bottom: 2px solid var(--blue); vertical-align: bottom; }
+td { padding: .6rem .75rem .6rem 0; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+tr.model td { font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.meter { display: flex; align-items: center; gap: .6rem; min-width: 9rem; }
+.meter i { height: .8rem; background: var(--blue); width: calc(var(--v) * 7rem); min-width: 2px; }
+.num { text-align: right; white-space: nowrap; }
+#lead { display: block; width: 100%; max-width: 44rem; height: auto; background: var(--white); border-radius: 4px; margin-top: 1.25rem; }
+#lead text { font: 600 13px var(--display); fill: var(--blue); }
+.live .cell { height: 1.5rem; font-size: .85rem; }
+.live .label { margin: .7rem 0 .2rem; }
+footer { margin-top: 5rem; background: var(--blue); color: var(--white); padding: 2rem 0 2.5rem; font-size: 1rem; }
+footer :focus-visible { outline-color: var(--yellow); }
+footer p { max-width: 75ch; }
+footer strong { color: var(--yellow); font-weight: 600; }
+@media (max-width: 40rem) { .jump { margin-left: 0; } h2 { margin-top: 3.5rem; } }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Onder Nul</h1>
+  <p>Some hours, Dutch electricity costs less than nothing. This is a warning for those hours, made two days ahead and checked against what really happened in 2026.</p>
+</div></header>
+
+<main class="wrap">
+  <h2>Every day of the test year</h2>
+  <p class="prose">The model learned from 2024 and 2025. It never saw 2026. Each column below is one day of 2026: how many hours went below zero, and how many of them it warned about two days earlier. Click a day.</p>
+  <svg id="year" role="img" aria-label="Negative-price hours per day in 2026, split into caught and missed" preserveAspectRatio="none"></svg>
+  <div class="months" id="months"></div>
+  <ul class="key">
+    <li><i style="background:var(--blue)"></i>Negative hours it caught</li>
+    <li><i style="background:var(--red)"></i>Negative hours it missed</li>
+    <li><i style="background:var(--blue-mid)"></i>False alarms (below the line)</li>
+    <li class="note" id="hover" aria-live="off"></li>
+  </ul>
+
+  <div class="controls">
+    <button class="step" id="prev" aria-label="Previous day"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2 4 8l6 6"/></svg></button>
+    <input type="date" id="date" aria-label="Day to show">
+    <button class="step" id="next" aria-label="Next day"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 2 6 6-6 6"/></svg></button>
+    <div class="jump">
+      <button data-jump="best">A day it got right</button>
+      <button data-jump="missed">Its worst miss</button>
+      <button data-jump="false_alarms">Its worst false alarm</button>
+    </div>
+  </div>
+  <p id="story" aria-live="polite"></p>
+
+  <div class="scroll"><div class="sheet" id="sheet">
+    <div class="row hours" id="hours"></div>
+    <p class="label">Sunshine forecast <small>made two days before, De Bilt</small></p>
+    <div class="row sun" id="sun"></div>
+    <p class="label">Model: chance the price goes below zero, in % <small>filled = warning</small></p>
+    <div class="row" id="model"></div>
+    <p class="label">Simple rule: the same hour was negative last week</p>
+    <div class="row" id="rule"></div>
+    <div class="arrived">
+      <p class="label">What arrived: the real price per hour <small>euros per MWh, before tax. 100 is 10 cents per kWh.</small></p>
+      <div class="row chart" id="chart"></div>
+      <div class="row verdict" id="verdict"></div>
+      <ul class="key">
+        <li><span data-icon="hit"></span>Warned and negative</li>
+        <li><span data-icon="miss"></span>Negative, no warning</li>
+        <li><span data-icon="false"></span>Warned, stayed positive</li>
+      </ul>
+    </div>
+  </div></div>
+
+  <h2>Does it beat a simple rule?</h2>
+  <p class="prose" id="base-intro"></p>
+  <div class="table-scroll"><table id="results"></table></div>
+
+  <h2>How far ahead does it work?</h2>
+  <p class="prose">Tomorrow's prices are published every day around 13:00, so nobody needs a model for tomorrow. The question is what happens further out. The score (F1) is only high when the warnings are both right and complete.</p>
+  <svg id="lead" viewBox="0 0 640 300" role="img" aria-label="Score by days ahead for the model and two simple rules"></svg>
+
+  <h2>Where it fails</h2>
+  <p class="prose" id="fail-intro"></p>
+  <div class="table-scroll"><table id="groups"></table></div>
+
+  <h2>Would it have saved money?</h2>
+  <div class="prose" id="money"></div>
+
+  <h2>The next seven days</h2>
+  <p class="prose" id="live-intro"></p>
+  <div class="scroll"><div class="sheet live" id="live"></div></div>
+</main>
+
+<footer><div class="wrap">
+  <p><strong>This project is a prototype and is not financial advice.</strong> Prices are wholesale day-ahead prices without taxes or supplier fees.</p>
+  <p>Prices: <a href="https://api.energy-charts.info">energy-charts.info</a> (Bundesnetzagentur | SMARD.de, CC BY 4.0). Weather forecasts: <a href="https://open-meteo.com/en/docs/previous-runs-api">Open-Meteo Previous Runs API</a> (CC BY 4.0). Typeface: Barlow (SIL Open Font Licence). Every number on this page is written by the notebook <code>onder_nul.ipynb</code>; the page does no modelling of its own.</p>
+  <p>Vayun Godara, Veritas AI International High School Hackathon 2026, AI + Finance. Built with Claude (Anthropic) through Amp.</p>
+</div></footer>
+
+<script src="data.js"></script>
+<script>
+const D = window.ONDER_NUL, T = D.threshold, dates = Object.keys(D.days), $ = id => document.getElementById(id);
+const asDate = iso => new Date(iso + "T12:00:00");
+const nice = (iso, opts = { weekday: "long", day: "numeric", month: "long" }) => asDate(iso).toLocaleDateString("en-GB", opts);
+const pct = v => Math.round(v * 100) + "%";
+const count = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+const ICON = {
+  hit: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.5" fill="#003082"/><path d="m4.4 8.3 2.4 2.4 4.7-5.2" fill="none" stroke="#FFC917" stroke-width="2"/></svg>',
+  miss: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13" stroke="#C8102E" stroke-width="2.6"/></svg>',
+  false: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.8" fill="none" stroke="#003082" stroke-width="2"/></svg>',
+};
+document.querySelectorAll("[data-icon]").forEach(el => (el.innerHTML = ICON[el.dataset.icon]));
+
+// For one day: was each hour a hit, a miss, a false alarm, or nothing?
+function tally(d) {
+  const t = { hit: 0, miss: 0, false: 0 };
+  t.marks = d.prob.map((p, i) => {
+    const warned = p >= T, negative = d.price[i] < 0;
+    const mark = warned && negative ? "hit" : negative ? "miss" : warned ? "false" : "";
+    if (mark) t[mark]++;
+    return mark;
+  });
+  return t;
+}
+const tallies = Object.fromEntries(dates.map(iso => [iso, tally(D.days[iso])]));
+const best = dates.reduce((a, b) => (tallies[b].hit - tallies[b].miss - tallies[b].false > tallies[a].hit - tallies[a].miss - tallies[a].false ? b : a));
+const jumps = { best, ...D.worst };
+
+const cells = (prob, thr) => prob.map((p, i) => `<span class="cell${p >= thr ? " on" : ""}" style="--i:${i}">${p >= 0.05 ? Math.round(p * 100) : ""}</span>`).join("");
+
+function show(iso) {
+  if (!D.days[iso]) return;
+  const d = D.days[iso], t = tallies[iso], n = d.hours.length, i = dates.indexOf(iso);
+  const sheet = $("sheet");
+  sheet.style.setProperty("--n", n);
+  $("date").value = iso;
+  $("prev").disabled = i === 0;
+  $("next").disabled = i === dates.length - 1;
+  document.querySelectorAll("[data-jump]").forEach(b => b.setAttribute("aria-pressed", jumps[b.dataset.jump] === iso));
+  history.replaceState(null, "", "#" + iso);
+
+  // the sentence
+  const warned = t.hit + t.false, negative = t.hit + t.miss, madeOn = new Date(asDate(iso) - 2 * 864e5).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  const ruleWarned = d.last_week.filter(Boolean).length, ruleHit = d.last_week.filter((w, k) => w && d.price[k] < 0).length;
+  let s = `<strong>${nice(iso)}.</strong> `;
+  if (!warned && !negative) s += `On ${madeOn} the model gave no warning, and no hour went below zero. Most days look like this.`;
+  else {
+    s += `On ${madeOn} the model warned about ${count(warned, "hour")}. ${negative ? count(negative, "hour") + " really went" : "No hour went"} below zero`;
+    s += negative ? `: it caught <strong>${t.hit}</strong>, missed <strong>${t.miss}</strong> and raised ${count(t.false, "false alarm")}.` : `, so ${warned === 1 ? "that was a false alarm" : "those were false alarms"}.`;
+    const low = Math.min(...d.price);
+    if (low < 0) s += ` The lowest price was ${low.toFixed(0).replace("-", "−")} euros per MWh at ${String(d.hours[d.price.indexOf(low)]).padStart(2, "0")}:00.`;
+  }
+  s += ` The last-week rule warned about ${count(ruleWarned, "hour")}${ruleWarned ? ` and caught ${ruleHit}` : ""}.`;
+  $("story").innerHTML = s;
+
+  // the rows
+  $("hours").innerHTML = d.hours.map(h => `<span>${String(h).padStart(2, "0")}</span>`).join("");
+  $("sun").innerHTML = d.sun_forecast.map(v => `<i style="--v:${Math.min(v / 900, 1)}" title="${v} W/m²"${v < 20 ? " hidden" : ""}></i>`).join("");
+  $("model").innerHTML = cells(d.prob, T);
+  $("rule").innerHTML = d.last_week.map((w, k) => `<span class="cell${w ? " on" : ""}" style="--i:${k}"></span>`).join("");
+  const hi = Math.max(...d.price, 50), lo = Math.min(...d.price, -25), span = hi - lo, zero = (hi / span) * 100;
+  $("chart").innerHTML =
+    d.price.map(p => `<div class="col" title="${p} €/MWh"><i class="${p < 0 ? "neg" : ""}" style="top:${p < 0 ? zero : ((hi - p) / span) * 100}%;height:${(Math.abs(p) / span) * 100}%"></i></div>`).join("") +
+    `<div class="zero" style="top:${zero}%"></div><span class="tick" style="top:0">${Math.round(hi)}</span><span class="tick" style="top:calc(${zero}% - 1.3em)">0</span><span class="tick" style="bottom:0">${Math.round(lo)}</span>`;
+  $("verdict").innerHTML = t.marks.map(m => `<span${m ? ` title="${{ hit: "Warned and negative", miss: "Negative, no warning", false: "Warned, stayed positive" }[m]}"` : ""}>${ICON[m] || ""}</span>`).join("");
+  sheet.classList.remove("flip"); void sheet.offsetWidth; sheet.classList.add("flip"); // replay the flip
+  drawYear(iso);
+}
+
+// one column per day: caught (blue) and missed (red) above the line, false alarms below
+function drawYear(selected) {
+  const w = 3, base = 60, u = 3.2, svg = $("year");
+  svg.setAttribute("viewBox", `0 0 ${dates.length * w} 88`);
+  svg.innerHTML = dates.map((iso, i) => {
+    const t = tallies[iso], x = i * w;
+    return (iso === selected ? `<rect x="${x - 1.5}" y="0" width="${w + 3}" height="88" fill="#fff"/>` : "") +
+      `<rect x="${x}" y="${base - t.hit * u}" width="${w - 0.6}" height="${t.hit * u}" fill="#003082"/>` +
+      `<rect x="${x}" y="${base - (t.hit + t.miss) * u}" width="${w - 0.6}" height="${t.miss * u}" fill="#C8102E"/>` +
+      `<rect x="${x}" y="${base + 1}" width="${w - 0.6}" height="${t.false * u}" fill="#4F6BAD"/>`;
+  }).join("") + `<rect x="0" y="${base}" width="${dates.length * w}" height="1" fill="#003082"/>`;
+}
+const dayAt = e => { const r = $("year").getBoundingClientRect(); return dates[Math.max(0, Math.min(dates.length - 1, Math.floor(((e.clientX - r.left) / r.width) * dates.length)))]; };
+$("year").onclick = e => show(dayAt(e));
+$("year").onmousemove = e => { const iso = dayAt(e), t = tallies[iso]; $("hover").textContent = `${nice(iso, { weekday: "short", day: "numeric", month: "short" })}: ${count(t.hit + t.miss, "negative hour")}, ${t.hit} caught, ${count(t.false, "false alarm")}`; };
+$("year").onmouseleave = () => ($("hover").textContent = "");
+$("months").innerHTML = dates.map((iso, i) => (iso.endsWith("-01") ? `<span style="left:${(i / dates.length) * 100}%">${nice(iso, { month: "short" })}</span>` : "")).join("");
+
+$("date").min = dates[0]; $("date").max = dates.at(-1);
+$("date").onchange = e => show(e.target.value);
+$("prev").onclick = () => show(dates[dates.indexOf($("date").value) - 1]);
+$("next").onclick = () => show(dates[dates.indexOf($("date").value) + 1]);
+document.querySelectorAll("[data-jump]").forEach(b => (b.onclick = () => show(jumps[b.dataset.jump])));
+
+// results against the simple rules
+const C = D.counts, model = D.results.at(-1), rule = D.results.find(r => r.name.includes("last week"));
+$("base-intro").textContent = `The test year has ${C.test_hours.toLocaleString("en-GB")} hours and ${C.test_negative} of them went below zero, about 1 in ${Math.round(C.test_hours / C.test_negative)}. A model that never warns is ${pct(1 - C.test_negative / C.test_hours)} accurate and useless, so accuracy is the wrong measure. These two are better: how often a warning was right, and how many negative hours were caught.`;
+const meter = v => `<div class="meter"><i style="--v:${v}"></i>${pct(v)}</div>`;
+$("results").innerHTML = `<tr><th>Two days ahead</th><th>Warnings that were right<br>(precision)</th><th>Negative hours caught<br>(recall)</th><th class="num">Warnings</th></tr>` +
+  D.results.map(r => `<tr class="${r === model ? "model" : ""}"><td>${r === model ? "The model" : r.name}</td><td>${meter(r.precision)}</td><td>${meter(r.recall)}</td><td class="num">${r.warnings}</td></tr>`).join("");
+
+// score by days ahead
+(() => {
+  const X = k => 60 + (k - 1) * 70, Y = v => 250 - v * 220, L = D.by_lead;
+  const line = (key, extra) => `<polyline points="${L.map(r => `${X(r.days_ahead)},${Y(r[key])}`).join(" ")}" fill="none" stroke="#003082" ${extra}/>` + L.map(r => `<circle cx="${X(r.days_ahead)}" cy="${Y(r[key])}" r="3.5" fill="#003082"/>`).join("");
+  const end = L.at(-1);
+  $("lead").innerHTML =
+    [0, 0.25, 0.5, 0.75, 1].map(v => `<line x1="52" x2="490" y1="${Y(v)}" y2="${Y(v)}" stroke="#003082" stroke-opacity="${v ? 0.18 : 1}"/><text x="44" y="${Y(v) + 4}" text-anchor="end">${v}</text>`).join("") +
+    L.map(r => `<text x="${X(r.days_ahead)}" y="272" text-anchor="middle">${r.days_ahead}</text>`).join("") + `<text x="275" y="292" text-anchor="middle">days ahead</text>` +
+    line("model_f1", 'stroke-width="3.5"') + line("last_week_f1", 'stroke-width="1.6" stroke-dasharray="6 4"') + line("same_hour_f1", 'stroke-width="1.6" stroke-dasharray="1.5 4"') +
+    `<text x="${X(7) + 12}" y="${Y(end.model_f1) - 8}">The model</text><text x="${X(7) + 12}" y="${Y(end.last_week_f1) + 18}">Same hour last week</text><text x="${X(4)}" y="${Y(Math.min(...L.map(r => r.same_hour_f1))) + 24}" text-anchor="middle">Same hour, that many days ago</text>`;
+})();
+
+// failures by group
+const G = Object.fromEntries(D.groups.map(g => [g.name, g])), night = G["Evening and night"], winter = G["October to March"];
+const sum = a => a.reduce((x, y) => x + y, 0), fa = D.days[D.worst.false_alarms], sunRatio = sum(fa.sun_forecast) / sum(fa.sun_actual);
+const easter = D.worst.missed === "2026-04-05" ? ", Easter Sunday: a public holiday with low demand, which the model has no input for" : "";
+$("fail-intro").innerHTML = `Almost every negative hour in the training years came from midday sun, so that is what the model learned. In the test year ${night["negative hours"]} negative hours fell in the evening or at night, caused by wind, and it caught ${Math.round(night.recall * night["negative hours"])} of them. Depth matters too: it caught ${pct(D.depth[0]["share caught"])} of the ${D.depth[0]["negative hours"]} hours that fell below −20 euros per MWh, but only ${pct(D.depth[2]["share caught"])} of the ${D.depth[2]["negative hours"]} hours that dipped less than 1 euro below zero. It is also weaker on weekdays and from October to March (${pct(winter.recall)} caught). Its worst miss was <a href="#${D.worst.missed}" data-go="${D.worst.missed}">${nice(D.worst.missed)}</a>${easter}. Its worst false alarm was <a href="#${D.worst.false_alarms}" data-go="${D.worst.false_alarms}">${nice(D.worst.false_alarms)}</a>, when the weather forecast promised ${sunRatio.toFixed(1)} times the sunshine that arrived.`;
+document.querySelectorAll("[data-go]").forEach(a => (a.onclick = e => { e.preventDefault(); show(a.dataset.go); $("story").scrollIntoView({ behavior: "smooth", block: "center" }); }));
+$("groups").innerHTML = `<tr><th>Part of the test year</th><th class="num">Negative hours</th><th>Warnings that were right</th><th>Negative hours caught</th></tr>` +
+  D.groups.map(g => `<tr><td>${g.name}</td><td class="num">${g["negative hours"]}</td><td>${g.warnings ? meter(g.precision) : "no warnings"}</td><td>${meter(g.recall)}</td></tr>`).join("");
+
+// money
+(() => {
+  const ex = Object.fromEntries(D.money.export.map(r => [r.name, r["euros gained in test period"]])), ch = Object.fromEntries(D.money.charge.map(r => [r.name, r]));
+  const eur = v => (v < 0 ? "−" : "") + "€" + Math.abs(v).toFixed(2);
+  $("money").innerHTML =
+    `<p>A little. These are rough checks on the test year with wholesale prices, not a prediction of anyone's bill.</p>` +
+    `<p><strong>Switching off solar export.</strong> A home with ten panels that stops exporting in the warned hours gains ${eur(ex["Model warning"])} over the test period. Knowing the future would give ${eur(ex["Perfect foresight"])}. Following the last-week rule loses money (${eur(ex["Same hour last week was negative"])}), because its false alarms throw away paid power.</p>` +
+    `<p><strong>Choosing a day to charge the car.</strong> Someone who needs one 40 kWh charge in the next three days and lets the model pick the day pays ${eur(ch.Model["euros per 40 kWh charge"])} per charge instead of ${eur(ch.Tomorrow["euros per 40 kWh charge"])} for always charging tomorrow. Picking the sunniest forecast day, with no AI, pays ${eur(ch["Sunniest day"]["euros per 40 kWh charge"])}. Knowing the future would pay ${eur(ch.Perfect["euros per 40 kWh charge"])}.</p>`;
+})();
+
+// live outlook
+if (D.live) {
+  const any = D.live.days.some(d => d.prob.some((p, i) => p >= d.threshold));
+  $("live-intro").textContent = `The same tested models, pointed at the real future with the weather forecast of ${D.live.made}. ${any ? "Filled hours are warnings." : "No negative hours are expected, which is normal for this time of year: almost all of them fall between April and September."} This part changes every time the notebook runs, so it is not part of the test results.`;
+  $("live").innerHTML = `<div class="row hours">${D.live.days[0].hours.map(h => `<span>${String(h).padStart(2, "0")}</span>`).join("")}</div>` +
+    D.live.days.map(d => `<p class="label">${nice(d.date)} <small>${count(d.days_ahead, "day")} ahead</small></p><div class="row" style="--n:${d.hours.length}">${cells(d.prob, d.threshold)}</div>`).join("");
+} else $("live-intro").textContent = "The live outlook was not available when the notebook last ran.";
+
+show(D.days[location.hash.slice(1)] ? location.hash.slice(1) : best);
+</script>
+</body>
+</html>
