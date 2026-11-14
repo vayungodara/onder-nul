@@ -5,6 +5,9 @@
 
 A two-day warning for the hours when Dutch electricity prices go below zero ("onder nul").
 
+**Demo:** https://vayungodara.github.io/onder-nul/demo/
+**Code:** [onder_nul.ipynb](onder_nul.ipynb), with outputs and a note on every step
+
 ## The problem
 
 In the Netherlands the hourly electricity price was negative for 584 hours in 2025. About 573,000 households have a contract that follows that price, and from 1 January 2027 solar owners can no longer cancel out the power they export against the power they use. In a negative hour, exporting solar power costs money and charging a car is cheapest. Tomorrow's prices only come out around 13:00 the day before, which is too late to plan a weekend.
@@ -13,7 +16,7 @@ In the Netherlands the hourly electricity price was negative for 584 hours in 20
 
 A model that gives every hour of a day a chance of the price going below zero, two days before that day. In go the calendar, the prices up to two days before, and the weather forecast as it looked two days before. Out comes a probability per hour, and a warning when it is 0.4 or higher.
 
-The demo page (`demo/index.html`) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. It also has a "pretend today is" view: pick a date, read the advice for the days after it, then reveal what happened. A household would open it on Thursday to plan Saturday.
+The [demo page](https://vayungodara.github.io/onder-nul/demo/) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. It also has a "pretend today is" view: pick a date, read the advice for the days after it, then reveal what happened. A household would open it on Thursday to plan Saturday.
 
 ## What I added
 
