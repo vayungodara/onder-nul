@@ -13,7 +13,7 @@ In the Netherlands the hourly electricity price was negative for 584 hours in 20
 
 A model that gives every hour of a day a chance of the price going below zero, two days before that day. In go the calendar, the prices up to two days before, and the weather forecast as it looked two days before. Out comes a probability per hour, and a warning when it is 0.4 or higher.
 
-The demo page (`demo/index.html`) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. A household would open it on Thursday to plan Saturday.
+The demo page (`demo/index.html`) shows any day of 2026: the warning from two days earlier next to the prices that really happened, with every hit, miss and false alarm marked. It also has a "pretend today is" view: pick a date, read the advice for the days after it, then reveal what happened. A household would open it on Thursday to plan Saturday.
 
 ## What I added
 

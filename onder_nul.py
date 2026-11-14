@@ -509,12 +509,27 @@ except Exception as e:  # no internet, or a data source is down: the rest of the
 # %% [markdown]
 # ## 11. Save everything the demo page shows
 #
-# The demo page (`demo/index.html`) does no calculation of its own. It only draws the numbers saved here,
-# so what you see in the demo is exactly what this notebook measured.
+# The demo page (`demo/index.html`) does no modelling of its own. It only draws the numbers saved here,
+# so what you see in the demo is exactly what this notebook measured. For its "pretend today is" view we also
+# save the warnings made 3 to 7 days ahead, from the same runs as the days-ahead chart in section 7.
 
 # %%
+SHOWN = range(2, 8)  # the demo shows warnings made 2 to 7 days ahead
+ahead = {k: lead_runs[k]["test"][["prob", "flag"]].reindex(pred.index) for k in SHOWN}  # line up with the main test table
+assert (ahead[2].flag == pred.flag).all(), "the 2-day run should be the same as the final model"
+
+
 def per_day(d):
-    return {"hours": d.index.tz_convert(TZ).hour.tolist(), "price": d.price.round(1).tolist(), "prob": d.prob.round(3).tolist(), "last_week": (d.price_week_ago < 0).astype(int).tolist(), "sun_forecast": d.nl_sun.round().tolist(), "sun_actual": d.sun_actual.round().tolist()}
+    return {
+        "hours": d.index.tz_convert(TZ).hour.tolist(),
+        "price": d.price.round(1).tolist(),
+        "last_week": (d.price_week_ago < 0).astype(int).tolist(),
+        "sun_forecast": d.nl_sun.round().tolist(),
+        "sun_actual": d.sun_actual.round().tolist(),
+        # for each number of days ahead: the chance per hour in whole percent, and the warnings as a string of 0s and 1s
+        "pct": {k: [None if np.isnan(x) else int(round(float(x) * 100)) for x in a.prob[d.index]] for k, a in ahead.items()},
+        "warn": {k: "".join("1" if f == True else "0" for f in a.flag[d.index]) for k, a in ahead.items()},
+    }
 
 
 export = {
@@ -529,7 +544,6 @@ export = {
     "ablation": ablation.round(3).reset_index(names="name").to_dict("records"),
     "money": {"export": export_table.round(2).reset_index(names="name").to_dict("records"), "charge": charge_table.round(2).reset_index(names="name").to_dict("records")},
     "days": {str(date): per_day(d) for date, d in pred.groupby("date")},
-    "live": live,
 }
 Path("demo").mkdir(exist_ok=True)
 Path("demo/data.js").write_text("window.ONDER_NUL = " + json.dumps(export, separators=(",", ":")) + ";\n")
