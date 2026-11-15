@@ -11,17 +11,17 @@ The Dutch hourly electricity price was below zero for 584 hours in 2025. About 5
 
 ## What I built
 
-A model that gives every hour a chance of a negative price, two days ahead. In go the calendar, past prices and the weather forecast as it looked two days before. Out comes a probability per hour, and a warning at 0.4 or higher. On the demo page you pick a date in 2026, read the advice, then reveal what really happened.
+A model that gives every hour a chance of a negative price, two days ahead. It takes the calendar, past prices and the weather forecast as it looked two days before, and gives a probability for each hour. At 0.4 or higher it warns. On the demo page you pick a date in 2026, read the advice, then reveal what really happened.
 
 ## What I added
 
-The idea is my own. The model only gets weather forecasts that existed at the time, taken from an archive of old forecasts. I also tested how many days ahead the warning stays useful and whether following it would save money.
+Our own idea. Claude suggested several project ideas and I chose this one. The model only gets weather forecasts that existed at the time, taken from an archive of old forecasts. I also tested how many days ahead the warning stays useful and whether following it would save money.
 
 ## How it works
 
 Data: 24,072 hourly day-ahead prices for the Netherlands, February 2024 to 13 November 2026 (energy-charts.info, none missing), and archived forecasts of sun, wind and temperature for De Bilt, the North Sea and central Germany (Open-Meteo). I dropped the first five weeks, which have no 7-day forecasts. I split by date and never shuffled: train to June 2025, choose settings on July to December 2025, test on 2026 (7,607 hours, 404 negative).
 
-Model: gradient boosted decision trees from scikit-learn, because the data is a table and trees learn combinations such as "sunny and a weekend" by themselves. A leak check scrambles later prices and confirms the model's inputs do not change.
+Model: gradient boosted decision trees from scikit-learn, because the data is a table and trees learn combinations such as "sunny and a weekend" by themselves. A leak check scrambles later prices and confirms the model's inputs stay the same.
 
 ## Results
 
@@ -50,6 +50,6 @@ This project is a prototype and is not financial advice.
 - Data: [energy-charts.info API](https://api.energy-charts.info) (Fraunhofer ISE, data from Bundesnetzagentur | SMARD.de, CC BY 4.0) and the [Open-Meteo Previous Runs API](https://open-meteo.com/en/docs/previous-runs-api) and Forecast API (CC BY 4.0).
 - Background figures: [Rijksoverheid on the end of the salderingsregeling](https://www.rijksoverheid.nl/themas/klimaat-milieu-en-natuur/energie-thuis/salderingsregeling) and [Solar Magazine reporting ACM figures](http://solarmagazine.nl/nieuws-zonne-energie/i43038/573-000-nederlanders-hebben-dynamisch-energiecontract-marktaandeel-anwb-krimpt).
 - Libraries: pandas, NumPy, scikit-learn, Matplotlib, Requests, Jupytext. No pretrained models and no tutorial code. Typeface: Barlow (SIL Open Font Licence).
-- AI tools: [Claude](https://claude.ai) (Anthropic), through the [Amp](https://ampcode.com) coding agent. It helped me compare ideas, wrote most of the code and the demo page, made the screen recording for the video and drafted this write-up. Inside Amp it also used [Parallel](https://parallel.ai) web search for research and the [TypeSafe Jev](https://docs.typesafe.ai) model to check this write-up's numbers against the notebook. I picked the project, checked the results and edited the text.
+- AI tools: [Claude](https://claude.ai) (Anthropic), through the [Amp](https://ampcode.com) coding agent. It suggested the project ideas, wrote most of the code and the demo page, made the screen recording, put my voice-over on it and drafted this write-up. Amp also used [Parallel](https://parallel.ai) web search for research and the [TypeSafe Jev](https://docs.typesafe.ai) model to check this write-up's numbers. I chose the project and recorded the narration.
 
 To run it: `pip install -r requirements.txt jupyter`, then open `onder_nul.ipynb`. It reads the saved files in `data/` and rewrites `demo/data.js`, the only thing the demo page reads.
