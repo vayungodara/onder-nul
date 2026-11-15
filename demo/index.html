@@ -29,6 +29,13 @@ h1, h2, th, .hours, .cell { font-family: var(--display); }
 
 header { background: var(--blue); color: var(--yellow); padding: 2.25rem 0 2rem; }
 header :focus-visible { outline-color: var(--yellow); }
+header .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 1.25rem 3rem; }
+.proof { width: auto; min-width: 0; color: var(--white); font-family: var(--display); }
+.proof caption { text-align: left; font: 400 .95rem Barlow, sans-serif; padding-bottom: .2rem; }
+.proof th { border-bottom: 2px solid var(--yellow); color: var(--yellow); font-size: .9rem; padding: .35rem 1.5rem .3rem 0; }
+.proof td { border-bottom: 1px solid rgba(255, 255, 255, .3); padding: .3rem 1.5rem .3rem 0; font-weight: 600; font-size: 1.05rem; }
+.proof tr:first-of-type + tr td { font-size: 1.5rem; font-weight: 700; color: var(--yellow); }
+.proof th:last-child, .proof td:last-child { padding-right: 0; }
 h1 { margin: 0; font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 700; line-height: .95; letter-spacing: -.02em; }
 header p { margin: 1rem 0 0; max-width: 46ch; font-size: clamp(1.15rem, 2.2vw, 1.4rem); color: var(--white); }
 h2 { margin: 4.5rem 0 .6rem; font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 700; line-height: 1.1; text-wrap: balance; }
@@ -37,7 +44,7 @@ p { margin: 0 0 1rem; }
 .note { color: var(--blue-soft); font-size: 1rem; }
 
 /* year strip */
-#year { display: block; width: 100%; height: 5.5rem; cursor: pointer; margin-top: 1.25rem; }
+#year { display: block; width: 100%; height: 7.5rem; cursor: pointer; margin-top: 1.25rem; }
 .months { position: relative; height: 1.4rem; font: 600 .85rem var(--display); color: var(--blue-soft); border-top: 2px solid var(--blue); }
 .months span { position: absolute; top: .15rem; }
 .key { display: flex; flex-wrap: wrap; gap: .35rem 1.4rem; margin: .5rem 0 0; padding: 0; list-style: none; font-size: .95rem; }
@@ -61,6 +68,11 @@ button.step svg { width: 1.1rem; height: 1.1rem; display: block; margin: auto; }
 #story strong, #advice strong { font-weight: 600; }
 #advice { min-height: 4.2em; }
 .controls label { font: 600 1.1rem var(--display); }
+.datebox { position: relative; display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 .95rem; border: 2px solid var(--blue); border-radius: 4px; font: 600 1.05rem/1 var(--display); white-space: nowrap; transition: background .18s var(--ease), color .18s var(--ease); }
+.datebox:hover { background: var(--blue); color: var(--yellow); }
+.datebox:focus-within { outline: 3px solid var(--blue); outline-offset: 3px; }
+.datebox input { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0; opacity: 0; } /* the real date field sits invisibly on top, so keyboard and picker still work */
+.key[hidden] { display: none; }
 
 /* the hour sheet */
 .scroll { overflow-x: auto; padding-inline: .75rem; margin-inline: -.75rem; }
@@ -73,8 +85,8 @@ button.step svg { width: 1.1rem; height: 1.1rem; display: block; margin: auto; }
 .sun { height: 2.5rem; align-items: end; border-bottom: 1px solid var(--rule); }
 .sun i { background: rgba(255, 255, 255, .6); border: 2px solid var(--blue); border-bottom: 0; height: calc(var(--v) * 100%); }
 .sun i[hidden] { display: block; visibility: hidden; }
-.cell { height: 2.1rem; display: grid; place-items: center; font-weight: 600; font-size: .95rem; border: 1px solid var(--rule); border-radius: 2px; color: var(--blue-soft); }
-.cell.on { background: var(--blue); border-color: var(--blue); color: var(--yellow); font-weight: 700; }
+.cell { height: 2.1rem; display: grid; place-items: center; font-weight: 600; font-size: .95rem; background: rgba(0, 48, 130, .09); border-radius: 2px; color: var(--blue); }
+.cell.on { background: var(--blue); color: var(--yellow); font-weight: 700; }
 .flip .cell { animation: flip .42s var(--ease) backwards; animation-delay: calc(var(--i) * 14ms); transform-origin: 50% 0; }
 @keyframes flip { from { transform: perspective(12rem) rotateX(-88deg); opacity: .15; } }
 @media (prefers-reduced-motion: reduce) { .flip .cell { animation: none; } }
@@ -104,6 +116,9 @@ tr:last-child td { border-bottom: 0; }
 .replay .cell { height: 1.6rem; font-size: .85rem; }
 .replay .label { margin: .75rem 0 .2rem; }
 .replay .label a { font-weight: 700; }
+.chart.mini { height: 2.4rem; margin-top: 3px; background: var(--white); border-radius: 2px; }
+.chart.mini .zero { border-top-width: 1px; }
+.replay .verdict { margin-top: .25rem; }
 .row[hidden] { display: none; }
 footer { margin-top: 5rem; background: var(--blue); color: var(--white); padding: 2rem 0 2.5rem; font-size: 1rem; }
 footer :focus-visible { outline-color: var(--yellow); }
@@ -119,28 +134,39 @@ footer strong { color: var(--yellow); font-weight: 600; }
   .hours span:not(:nth-child(3n + 1)) { visibility: hidden; }
   .verdict span, .verdict svg { width: 100%; height: auto; }
   .controls label { flex-basis: 100%; }
+  header .wrap { grid-template-columns: minmax(0, 1fr); }
+  main > h2:first-child { margin-top: 2.5rem; }
   .chart { height: 10rem; }
 }
 </style>
 </head>
 <body>
 <header><div class="wrap">
-  <h1>Onder Nul</h1>
-  <p>Some hours, Dutch electricity costs less than nothing. This is a warning for those hours, made two days ahead and checked against what really happened in 2026.</p>
+  <div>
+    <h1>Onder Nul</h1>
+    <p>Some hours, Dutch electricity costs less than nothing. Onder Nul warns you about those hours two days ahead.</p>
+  </div>
+  <table class="proof" id="proof"></table>
 </div></header>
 
 <main class="wrap">
   <h2>Plan the week ahead</h2>
-  <p class="prose">Pick any day of 2026 and pretend it is today. Tomorrow's prices are already public, so the outlook starts the day after tomorrow. Every row uses only what was known by the end of that day.</p>
+  <p class="prose">Pick a day in 2026 and pretend it is today. Each row is a warning made with only what was known that day. Tomorrow is left out, because its prices are already public.</p>
   <div class="controls">
     <label for="today">Pretend today is</label>
     <button class="step" id="tprev" aria-label="One day earlier"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2 4 8l6 6"/></svg></button>
-    <input type="date" id="today">
+    <span class="datebox"><span id="todayText"></span><input type="date" id="today"></span>
     <button class="step" id="tnext" aria-label="One day later"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 2 6 6-6 6"/></svg></button>
     <div class="jump"><button id="reveal" aria-pressed="false">Show what happened</button></div>
   </div>
   <p id="advice" aria-live="polite"></p>
   <div class="sheet replay" id="replay"></div>
+  <ul class="key" id="replayKey" hidden>
+    <li><span data-icon="hit"></span>Warned and negative</li>
+    <li><span data-icon="miss"></span>Negative, no warning</li>
+    <li><span data-icon="false"></span>Warned, stayed positive</li>
+    <li><i style="background:var(--white);border:1px solid var(--rule)"></i>White strip: the real price each hour, red when below zero</li>
+  </ul>
 
   <h2>Check any day of the test year</h2>
   <p class="prose">The model learned from 2024 and 2025. It never saw 2026. Each column below is one day of 2026: how many hours went below zero, and how many of them it warned about two days earlier. Click a day.</p>
@@ -155,7 +181,7 @@ footer strong { color: var(--yellow); font-weight: 600; }
 
   <div class="controls">
     <button class="step" id="prev" aria-label="Previous day"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2 4 8l6 6"/></svg></button>
-    <input type="date" id="date" aria-label="Day to show">
+    <span class="datebox"><span id="dateText"></span><input type="date" id="date" aria-label="Day to show"></span>
     <button class="step" id="next" aria-label="Next day"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 2 6 6-6 6"/></svg></button>
     <div class="jump">
       <button data-jump="best">A day it got right</button>
@@ -251,6 +277,13 @@ const tallies = Object.fromEntries(dates.map(iso => [iso, tally(D.days[iso])]));
 const best = dates.reduce((a, b) => (tallies[b].hit - tallies[b].miss - tallies[b].false > tallies[a].hit - tallies[a].miss - tallies[a].false ? b : a));
 const jumps = { best, ...D.worst };
 
+// one bar per hour for the real price: up for positive, down and red for negative
+function priceBars(d) {
+  const hi = Math.max(...d.price, 50), lo = Math.min(...d.price, -25), span = hi - lo, zero = (hi / span) * 100;
+  const html = d.price.map(p => `<div class="col" title="${cents(p)} ct/kWh"><i class="${p < 0 ? "neg" : ""}" style="top:${p < 0 ? zero : ((hi - p) / span) * 100}%;height:${(Math.abs(p) / span) * 100}%"></i></div>`).join("") + `<div class="zero" style="top:${zero}%"></div>`;
+  return { hi, lo, zero, html };
+}
+const dateText = iso => nice(iso, { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 const cells = (pct, warn) => pct.map((p, i) => `<span class="cell${warn[i] === "1" ? " on" : ""}" style="--i:${i}">${p >= 5 ? p : ""}</span>`).join("");
 
 function show(iso) {
@@ -258,7 +291,7 @@ function show(iso) {
   const d = D.days[iso], t = tallies[iso], n = d.hours.length, i = dates.indexOf(iso);
   const sheet = $("sheet");
   sheet.style.setProperty("--n", n);
-  $("date").value = iso;
+  $("date").value = iso; $("dateText").textContent = dateText(iso);
   $("prev").disabled = i === 0;
   $("next").disabled = i === dates.length - 1;
   document.querySelectorAll("[data-jump]").forEach(b => b.setAttribute("aria-pressed", jumps[b.dataset.jump] === iso));
@@ -283,10 +316,8 @@ function show(iso) {
   $("sun").innerHTML = d.sun_forecast.map(v => `<i style="--v:${Math.min(v / 900, 1)}" title="${v} W/m²"${v < 20 ? " hidden" : ""}></i>`).join("");
   $("model").innerHTML = cells(d.pct[2], d.warn[2]);
   $("rule").innerHTML = d.last_week.map((w, k) => `<span class="cell${w ? " on" : ""}" style="--i:${k}"></span>`).join("");
-  const hi = Math.max(...d.price, 50), lo = Math.min(...d.price, -25), span = hi - lo, zero = (hi / span) * 100;
-  $("chart").innerHTML =
-    d.price.map(p => `<div class="col" title="${cents(p)} ct/kWh"><i class="${p < 0 ? "neg" : ""}" style="top:${p < 0 ? zero : ((hi - p) / span) * 100}%;height:${(Math.abs(p) / span) * 100}%"></i></div>`).join("") +
-    `<div class="zero" style="top:${zero}%"></div><span class="tick" style="top:0">${cents(hi, 0)}</span><span class="tick" style="top:calc(${zero}% - 1.3em)">0</span><span class="tick" style="bottom:0">${cents(lo, 0)}</span>`;
+  const { hi, lo, zero, html } = priceBars(d);
+  $("chart").innerHTML = html + `<span class="tick" style="top:0">${cents(hi, 0)}</span><span class="tick" style="top:calc(${zero}% - 1.3em)">0</span><span class="tick" style="bottom:0">${cents(lo, 0)}</span>`;
   $("verdict").innerHTML = marks(t);
   sheet.classList.remove("flip"); void sheet.offsetWidth; sheet.classList.add("flip"); // replay the flip
   drawYear(iso);
@@ -319,6 +350,9 @@ document.querySelectorAll("[data-jump]").forEach(b => (b.onclick = () => show(ju
 // results against the simple rules
 const C = D.counts, model = D.results.at(-1), rule = D.results.find(r => r.name.includes("last week"));
 $("base-intro").textContent = `The test year has ${C.test_hours.toLocaleString("en-GB")} hours and ${C.test_negative} of them went below zero, about 1 in ${Math.round(C.test_hours / C.test_negative)}. A model that never warns is ${pct(1 - C.test_negative / C.test_hours)} accurate and useless, so accuracy is the wrong measure. These two are better: how often a warning was right, and how many negative hours were caught.`;
+const bestRule = D.results.slice(0, -1).reduce((a, b) => (b.F1 > a.F1 ? b : a));
+$("proof").innerHTML = `<caption>Two days ahead, tested on 2026, a year it never saw</caption><tr><th></th><th>Warnings that were right</th><th>Negative hours caught</th></tr>` +
+  `<tr><td>Onder Nul</td><td>${pct(model.precision)}</td><td>${pct(model.recall)}</td></tr><tr><td>Best rule without AI</td><td>${pct(bestRule.precision)}</td><td>${pct(bestRule.recall)}</td></tr>`;
 const meter = v => `<div class="meter"><i style="--v:${v}"></i>${pct(v)}</div>`;
 $("results").innerHTML = `<tr><th>Two days ahead</th><th>Warnings that were right<br>(precision)</th><th>Negative hours caught<br>(recall)</th><th class="num">Warnings</th></tr>` +
   D.results.map(r => `<tr class="${r === model ? "model" : ""}"><td>${r === model ? "The model" : r.name}</td><td>${meter(r.precision)}</td><td>${meter(r.recall)}</td><td class="num">${r.warnings}</td></tr>`).join("");
@@ -366,14 +400,14 @@ function plan(today, keepReveal = false) {
   const shown = btn.getAttribute("aria-pressed") === "true", tot = { hit: 0, miss: 0, false: 0 };
   const rows = LEADS.map(k => ({ k, iso: addDays(today, k) })).filter(r => D.days[r.iso]);
   let top = null, warnedDays = 0;
-  $("today").value = today; $("tprev").disabled = today === tMin; $("tnext").disabled = today === tMax;
+  $("today").value = today; $("todayText").textContent = dateText(today); $("replayKey").hidden = !shown; $("tprev").disabled = today === tMin; $("tnext").disabled = today === tMax;
   $("replay").innerHTML = `<div class="row hours">${[...Array(24).keys()].map(h => `<span>${hh(h)}</span>`).join("")}</div>` + rows.map(({ k, iso }) => {
     const d = D.days[iso], t = tally(d, k), w = windows(d, k), n = t.hit + t.false; // n = warned hours
     for (const m in tot) tot[m] += t[m];
     if (n) warnedDays++;
     if (n && (!top || n > top.n)) top = { iso, w, n };
     return `<p class="label"><a href="#${iso}" data-go="${iso}">${nice(iso)}</a> <small>${k} days ahead, ${w.length ? "warning " + w.join(" and ") : "no warning"}</small></p>` +
-      `<div class="row" style="--n:${d.hours.length}">${cells(d.pct[k], d.warn[k])}</div><div class="row verdict" style="--n:${d.hours.length}"${shown ? "" : " hidden"}>${marks(t)}</div>`;
+      `<div class="row" style="--n:${d.hours.length}">${cells(d.pct[k], d.warn[k])}</div><div class="row chart mini" style="--n:${d.hours.length}"${shown ? "" : " hidden"}>${priceBars(d).html}</div><div class="row verdict" style="--n:${d.hours.length}"${shown ? "" : " hidden"}>${marks(t)}</div>`;
   }).join("");
   let s = top
     ? `<strong>Best window: ${nice(top.iso)}, ${top.w.join(" and ")}.</strong> Plan the car charge or the washing machine for then, and stop exporting solar power. ${warnedDays === 1 ? "It is the only day with a warning." : warnedDays === rows.length ? `All ${rows.length} days shown have a warning.` : `${warnedDays} of these ${rows.length} days have a warning.`}`
@@ -385,6 +419,7 @@ function plan(today, keepReveal = false) {
   $("advice").innerHTML = s;
   if (!keepReveal) { const el = $("replay"); el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip"); }
 }
+document.querySelectorAll(".datebox input").forEach(el => (el.onclick = () => el.showPicker?.()));
 $("today").min = tMin; $("today").max = tMax;
 $("today").onchange = e => plan(e.target.value);
 $("tprev").onclick = () => plan(addDays($("today").value, -1));

@@ -46,6 +46,7 @@ import pandas as pd
 import requests
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import average_precision_score, f1_score, precision_recall_curve, precision_score, recall_score
 
 DATA = Path("data")
@@ -289,11 +290,14 @@ results.round(3)
 # *Average precision* (AP) summarises precision over all possible thresholds. A random guess scores about 0.05 here (the share of negative hours), a perfect model 1.0.
 
 # %%
-def run(cols, k=2):
+def boosting():
+    return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, random_state=0)
+
+
+def run(cols, k=2, new=boosting):
     """Choose the threshold on validation, retrain on everything before 2026, predict the test year."""
     t = make_table(k)
     tr, va, te = split(t)
-    new = lambda: HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, random_state=0)
     p_val = new().fit(tr[cols], tr.neg).predict_proba(va[cols])[:, 1]
     thr = max(np.arange(0.05, 0.95, 0.05), key=lambda c: f1_score(va.neg, p_val >= c))
     model = new().fit(pd.concat([tr, va])[cols], pd.concat([tr, va]).neg)
@@ -332,6 +336,39 @@ for name in list(baselines)[1:]:
 ax.set(xlabel="Recall (share of negative hours caught)", ylabel="Precision (share of warnings that were right)", title="Test year 2026", xlim=(0, 1), ylim=(0, 1))
 ax.legend(fontsize=8)
 plt.show()
+
+# %% [markdown]
+# ### Two checks on that result
+#
+# **Could the gap be luck?** There is only one test year. To see how much the scores depend on which days happened
+# to be in it, we rebuild the test year 1,000 times by drawing its days at random, with repeats (a *bootstrap*),
+# and score the model and the best rule on each version. If the model wins almost every time, the gap does not
+# hang on a few lucky days. It does not tell us how the model would do in a different year.
+
+# %%
+def daily_counts(flag):
+    """For each test day: hits, false alarms and misses."""
+    y = pred.neg.astype(bool)
+    counts = pd.DataFrame({"hit": flag & y, "false": flag & ~y, "miss": ~flag & y})
+    return counts.groupby(pred.index.tz_convert(TZ).date).sum().to_numpy()
+
+
+f1_from = lambda c: 2 * c[..., 0] / (2 * c[..., 0] + c[..., 1] + c[..., 2])  # F1 written with hits, false alarms and misses
+m, r = daily_counts(pred.flag), daily_counts(sunny_weekend(pred, SUN_CUT))
+draws = np.random.default_rng(0).integers(0, len(m), size=(1000, len(m)))  # 1,000 made-up test years, as lists of day numbers
+f1_m, f1_r = f1_from(m[draws].sum(axis=1)), f1_from(r[draws].sum(axis=1))
+print(f"Model F1 {f1_from(m.sum(axis=0)):.2f}; 95% of the resampled years fall between {np.percentile(f1_m, 2.5):.2f} and {np.percentile(f1_m, 97.5):.2f}")
+print(f"Best rule F1 {f1_from(r.sum(axis=0)):.2f}; 95% fall between {np.percentile(f1_r, 2.5):.2f} and {np.percentile(f1_r, 97.5):.2f}")
+print(f"The model beats the rule in {(f1_m > f1_r).mean():.1%} of the resampled years")
+
+# %% [markdown]
+# **Does it need hundreds of trees?** We train one small decision tree on the same inputs, with its warning threshold
+# chosen on validation in the same way. One tree is a single chain of yes/no questions. Boosting adds up a few hundred.
+
+# %%
+one_tree = run(final["cols"], new=lambda: DecisionTreeClassifier(max_depth=5, min_samples_leaf=50, random_state=0))["test"]
+simpler = pd.DataFrame({"One small decision tree": score(one_tree.neg, one_tree.flag), f"Gradient boosting ({final['model'].n_iter_} trees)": score(pred.neg, pred.flag)}).T
+simpler.round(3)
 
 # %% [markdown]
 # ### Which inputs matter?
